@@ -170,22 +170,62 @@ This data reveals a concerning pattern where **62.8% of students** either fail o
 ### Table Relationships (ERD Overview)
 
 ```
-student_info (1) ────────────── (M) student_registration
-     │                              │
-     │                              │
-     └─────────────┬─────────────────┴─────────────┐
-                   │                               │
-                   ▼                               ▼
-           student_assessments (M)          student_vle (M)
-                   │                               │
-                   │                               │
-                   ▼                               ▼
-             assessments (1)                    vle (1)
-                   │                               │
-                   └─────────────┬─────────────────┘
-                                 │
-                                 ▼
-                            courses (1)
+┌─────────────────┐                    ┌─────────────────────┐
+│   STUDENT_INFO  │                    │ STUDENT_REGISTRATION│
+│                 │                    │                     │
+│ PK: student_id  │────────────────────│ PK: registration_id │
+│     first_name  │         1:M        │ FK: student_id      │
+│     last_name   │                    │ FK: course_id       │
+│     email       │                    │     registration_   │
+│     phone       │                    │         date        │
+└─────────────────┘                    │     status          │
+         │                             └─────────────────────┘
+         │
+         │ 1:M
+         ├─────────────────────────────────────────────────────────┐
+         │                                                         │
+         ▼                                                         ▼
+┌─────────────────┐                                    ┌─────────────────┐
+│STUDENT_ASSESSMNT│                                    │   STUDENT_VLE   │
+│                 │                                    │                 │
+│ FK: student_id  │                                    │ FK: student_id  │
+│ FK: assessment_ │                                    │ FK: vle_id      │
+│         id      │                                    │     access_date │
+│     score       │                                    │     duration    │
+│     submission_ │                                    │     activity_   │
+│         date    │                                    │         type    │
+│     grade       │                                    └─────────────────┘
+└─────────────────┘                                              │
+         │                                                       │
+         │ M:1                                                   │ M:1
+         ▼                                                       ▼
+┌─────────────────┐                                    ┌─────────────────┐
+│   ASSESSMENTS   │                                    │       VLE       │
+│                 │                                    │                 │
+│ PK: assessment_ │                                    │ PK: vle_id      │
+│         id      │                                    │ FK: course_id   │
+│ FK: course_id   │                                    │     module_name │
+│     title       │                                    │     content_    │
+│     description │                                    │         type    │
+│     due_date    │                                    │     created_    │
+│     max_score   │                                    │         date    │
+└─────────────────┘                                    └─────────────────┘
+         │                                                       │
+         │ M:1                                                   │ M:1
+         └─────────────────────┐         ┌─────────────────────────┘
+                               ▼         ▼
+                        ┌─────────────────┐
+                        │     COURSES     │
+                        │                 │
+                        │ PK: course_id   │
+                        │     course_name │
+                        │     course_code │
+                        │     credits     │
+                        │     instructor  │
+                        │     start_date  │
+                        │     end_date    │
+                        └─────────────────┘
+
 ```
 
 ### Core Table Schemas
