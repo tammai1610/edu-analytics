@@ -1,334 +1,61 @@
-# OULAD Student Analytics Project - Technical Documentation
+# OULAD Student Analytics: Key Insights & Findings
+
+[Technical Documentation](https://github.com/tammai1610/edu-analytics/blob/main/Technical%20Documentation)
 
 ## Project Overview
+**Objective**: Analyze 32,593 students across 7 modules to identify success patterns, predict at-risk students, and understand engagement drivers using comprehensive SQL-based analytics.
 
-### Purpose
-This project transforms **10+ million clickstream events** from the Open University Learning Analytics Dataset (OULAD) into actionable insights using **Spark SQL**. Working with real data from **32,593 students across 22 courses**, I built a complete analytics pipeline that reveals the hidden patterns between **student engagement, demographics, and academic outcomes**.
+**Results**: 10 strategic queries examining performance, engagement, demographics, and risk factors with dashboard preparation for actionable insights.
 
-### Key Objectives
-- Analyze student learning patterns and engagement behaviors
-- Identify predictors of academic success and failure
-- Create comprehensive views for educational insights
-- Build a scalable data pipeline for learning analytics
+## Critical Findings
 
----
+### 1. The Completion Crisis
+Only **37.93% of students pass**, while **31.16% withdraw** before failing. Despite average assessment scores of 72.8%, less than half (47.2%) successfully complete programs.
 
-## Project Environment
+**Key Insight**: This is a retention problem, not an academic standards issue.
 
-### Technologies & Tools
-- **Database Platform**: Databricks SQL Warehouse
-- **Primary Language**: SQL (Spark SQL)
-- **Data Processing**: Apache Spark
-- **Workspace**: `eduanalytics` database
-- **Version Control**: Git-based workflow
-- **Analysis Framework**: 12 strategic queries and dashboard preparation
+### 2. Engagement Quality Over Quantity
+High engagement students show **76.91% pass rate** with 3,423 average clicks, but surprisingly, "No Engagement" students still achieve **69% assessment scores**.
 
-### Infrastructure
-- **Cloud Platform**: Databricks
-- **Processing Engine**: Apache Spark 3.x
-- **Storage**: Delta Lake format
-- **Compute**: Serverless SQL warehouse
-- **Performance**: Optimized with caching and partitioning
+**Critical Discovery**: Engagement span (sustained interaction) correlates stronger with success (0.299) than total clicks (0.286) or resources accessed (0.239).
 
----
+### 3. The Age Advantage
+**Males aged 55+** achieve the highest success rate (71.26%) with lower platform engagement, while younger students (0-35) consistently underperform across genders.
 
-## Data Sources & Data Gathering
+**Strategic Insight**: Maturity translates to more efficient study habits requiring less platform interaction.
 
-### Dataset Overview
-The **Open University Learning Analytics Dataset (OULAD)** contains comprehensive student interaction data:
+### 4. Educational Background as Risk Predictor
+Students with **no formal qualifications** show 42.9% withdrawal rate versus 23.6% for post-graduates. The 40% cohort with below A-level education represents the highest-volume, highest-risk population.
 
-- **Source**: Open University (UK) online learning platform
-- **Timeframe**: Multiple academic presentations (2013-2014)
-- **Scale**: 32,593 students, 22 courses, 10+ million interactions
-- **Format**: CSV files imported via Databricks file upload interface
+### 5. Module Performance Gaps
+**AAA module** leads with 70.99% success rate, while **CCC module** struggles at 37.84% despite moderate engagement and high enrollment.
 
-### Core Data Tables
-1. **student_info** - Student demographics and enrollment details
-2. **student_registration** - Course registration and unregistration dates
-3. **student_assessments** - Assessment submissions and scores
-4. **student_vle** - Virtual Learning Environment interactions
-5. **assessments** - Assessment metadata and types
-6. **vle** - VLE resource information
-7. **courses** - Course details and presentation information
+**Assessment Intelligence**: Computer-marked assessments yield highest scores (78%) with lowest variability, while exams show most challenging performance (65.01%) with highest variability.
 
-### Data Ingestion Process
-```sql
--- Database workspace creation
-CREATE DATABASE eduanalytics;
+### 6. Early Warning Indicators
+High-risk students show **42x lower platform interaction** (44 vs 1,887 clicks) and minimal assessment completion (1.84 vs 8.74 submissions).
 
--- CSV file upload via Databricks interface
--- Tables created: assessments, student_info, student_registration, 
--- student_vle, student_assessments, vle, courses
-```
+**Risk Stratification**:
+- High Risk: 206 students (0.8%) - Critical intervention needed
+- Medium Risk: 6,664 students (25%) - Enhanced support required
+- Low Risk: 19,857 students (73%) - Standard monitoring
 
----
+## Strategic Recommendations
 
-## Project Phases & Implementation
+### Immediate Actions
+1. **Deploy Early Warning System**: Automated alerts for students with <100 clicks in first 4 weeks
+2. **Target CCC Module**: Immediate review and intervention for 37.84% success rate
+3. **Support At-Risk Demographics**: Specialized programs for students without formal qualifications
 
-### Phase 1: [Data Loading & Table Creation](https://github.com/tammai1610/edu-analytics/blob/main/01-create-table.ipynb)
-**Objective**: Load OULAD CSV files into Databricks as SQL tables within the `eduanalytics` workspace
+### Medium-Term Strategy
+1. **Engagement Quality Focus**: Shift metrics from clicks to sustained interaction patterns
+2. **Age-Responsive Support**: Pair older successful students with younger learners
+3. **Module Standardization**: Replicate AAA success factors across underperforming programs
 
-#### Sample Data Structure:
-```sql
--- Student Info Table Structure
-SELECT * FROM workspace.eduanalytics.student_info LIMIT 5;
--- Fields: code_module, code_presentation, id_student, gender, region, 
--- highest_education, imd_band, age_band, num_of_prev_attempts, 
--- studied_credits, disability, final_result
-```
+### Success Metrics
+- **Primary Goal**: Increase success rate from 47.2% to 60%
+- **Secondary Goal**: Reduce withdrawal rate from 31.16% to <20%
+- **Tertiary Goal**: Standardize module performance above 50% success rate
 
-### Phase 2: [Exploratory Data Analysis (EDA) & Data Cleaning](https://github.com/tammai1610/edu-analytics/blob/main/02-create-views.ipynb)
-**Objective**: Transform raw OULAD data into clean, analysis-ready tables and create comprehensive views
-
-#### Data Quality Issues Identified:
-- **Date Format Problems**: Raw date columns stored as integers (days since course start)
-- **Non-numeric Values**: Score and click columns contained non-numeric data requiring casting
-- **Missing Value Handling**: Inconsistent NULL handling across related tables
-
-#### Data Quality Assessment Results:
-| Table | Total Records | Valid Dates | Null Dates |
-|-------|---------------|-------------|------------|
-| Assessment Dates | 206 | 195 | 11 |
-| Registration Dates | 32,593 | 32,548 | 45 |
-| VLE Dates | 10,655,280 | 10,655,280 | 0 |
-
-#### Data Cleaning Solutions:
-1. **Date Standardization**:
-   - Base Date: Established 2013-02-01 as reference point
-   - Conversion Logic: Used `DATE_ADD('2013-02-01', TRY_CAST(date AS INT))` function
-   - Tables Cleaned: `assessments_clean`, `studentregistration_clean`, `studentvle_clean`
-
-2. **Data Type Corrections**:
-   - Score casting: `TRY_CAST(score AS DOUBLE)` with NULL handling
-   - Click casting: `TRY_CAST(sum_click AS INT)` for interaction data
-
-3. **Missing Value Strategy**:
-   - Preserved NULL values where meaningful (e.g., unregistration dates)
-   - Applied consistent NULL handling across related tables
-
-#### Clean Table Creation:
-```sql
--- Example: Assessment table cleaning
-CREATE OR REPLACE TABLE eduanalytics.assessments_clean AS
-SELECT
-    code_module,
-    code_presentation,
-    id_assessment,
-    assessment_type,
-    CASE 
-        WHEN TRY_CAST(date AS INT) IS NOT NULL
-        THEN DATE_ADD('2013-02-01', TRY_CAST(date AS INT))
-        ELSE NULL
-    END AS date,
-    weight
-FROM eduanalytics.assessments;
-```
-
-### Phase 3: [Comprehensive View Creation](https://github.com/tammai1610/edu-analytics/blob/main/02-create-views.ipynb)
-**Objective**: Build analytical views that aggregate student engagement, performance, and demographic data
-
-#### Master Views Created:
-
-1. **v_student_info_complete** - Enhanced student demographics with registration details
-2. **v_vle_engagement_summary** - VLE interaction metrics per student
-3. **v_assessment_performance** - Assessment scores aggregated by type (TMA, CMA, Exam)
-4. **v_student_analytics_master** - Master view combining all student data with derived metrics
-
-#### Key Analytical Features:
-- **Engagement Metrics**: Total clicks, unique resources accessed, engagement span
-- **Performance Metrics**: Pass rates, average scores by assessment type
-- **Demographic Analysis**: Regional, educational, and socioeconomic breakdowns
-- **Derived Insights**: Engagement levels, performance predictors
-
-### Phase 4: [Analysis & Insights](https://github.com/tammai1610/edu-analytics/blob/main/03-analysis-dashboard.ipynb)
-**Objective**: Execute comprehensive data-driven analysis using SQL to uncover actionable insights
-
-#### Analysis Framework:
-The analysis employs **12 strategic queries** addressing critical educational questions:
-- What drives student success vs. failure?
-- Can we predict at-risk students early?
-- How do demographics impact learning outcomes?
-- Which engagement patterns lead to better performance?
-
-#### Key Findings:
-
-##### Overall Student Performance Distribution:
-- **Pass Rate**: 37.93% (12,361 students) - largest single category
-- **Withdrawal Rate**: 31.16% (10,156 students) - significant attrition
-- **Failure Rate**: 21.64% (7,052 students)
-- **Distinction Rate**: Only 9.28% (3,024 students) - suggesting high academic standards
-
-##### Critical Insight:
-> "Only 1 in 3 students crosses the finish line successfully. Nearly a third simply disappear—withdrawing before they fail."
-
-This data reveals a concerning pattern where **62.8% of students** either fail or withdraw, indicating significant challenges in online learning retention and success.
-
----
-
-## Data Dictionary & Schema Documentation
-
-### Table Relationships (ERD Overview)
-
-```
-┌─────────────────┐                    ┌─────────────────────┐
-│   STUDENT_INFO  │                    │ STUDENT_REGISTRATION│
-│                 │                    │                     │
-│ PK: student_id  │────────────────────│ PK: registration_id │
-│     first_name  │         1:M        │ FK: student_id      │
-│     last_name   │                    │ FK: course_id       │
-│     email       │                    │     registration_   │
-│     phone       │                    │         date        │
-└─────────────────┘                    │     status          │
-         │                             └─────────────────────┘
-         │
-         │ 1:M
-         ├─────────────────────────────────────────────────────────┐
-         │                                                         │
-         ▼                                                         ▼
-┌─────────────────┐                                    ┌─────────────────┐
-│STUDENT_ASSESSMNT│                                    │   STUDENT_VLE   │
-│                 │                                    │                 │
-│ FK: student_id  │                                    │ FK: student_id  │
-│ FK: assessment_ │                                    │ FK: vle_id      │
-│         id      │                                    │     access_date │
-│     score       │                                    │     duration    │
-│     submission_ │                                    │     activity_   │
-│         date    │                                    │         type    │
-│     grade       │                                    └─────────────────┘
-└─────────────────┘                                              │
-         │                                                       │
-         │ M:1                                                   │ M:1
-         ▼                                                       ▼
-┌─────────────────┐                                    ┌─────────────────┐
-│   ASSESSMENTS   │                                    │       VLE       │
-│                 │                                    │                 │
-│ PK: assessment_ │                                    │ PK: vle_id      │
-│         id      │                                    │ FK: course_id   │
-│ FK: course_id   │                                    │     module_name │
-│     title       │                                    │     content_    │
-│     description │                                    │         type    │
-│     due_date    │                                    │     created_    │
-│     max_score   │                                    │         date    │
-└─────────────────┘                                    └─────────────────┘
-         │                                                       │
-         │ M:1                                                   │ M:1
-         └─────────────────────┐         ┌─────────────────────────┘
-                               ▼         ▼
-                        ┌─────────────────┐
-                        │     COURSES     │
-                        │                 │
-                        │ PK: course_id   │
-                        │     course_name │
-                        │     course_code │
-                        │     credits     │
-                        │     instructor  │
-                        │     start_date  │
-                        │     end_date    │
-                        └─────────────────┘
-
-```
-
-### Core Table Schemas
-
-#### student_info
-| Column | Type | Description |
-|--------|------|-------------|
-| code_module | STRING | Course module code (e.g., 'AAA', 'BBB') |
-| code_presentation | STRING | Course presentation year/semester |
-| id_student | INTEGER | Unique student identifier |
-| gender | STRING | Student gender (M/F) |
-| region | STRING | Student geographic region |
-| highest_education | STRING | Highest educational qualification |
-| imd_band | STRING | Index of Multiple Deprivation band |
-| age_band | STRING | Age group (0-35, 35-55, 55<=) |
-| num_of_prev_attempts | INTEGER | Number of previous course attempts |
-| studied_credits | INTEGER | Number of credits studied |
-| disability | STRING | Disability status (Y/N) |
-| final_result | STRING | Course outcome (Pass/Fail/Withdrawn/Distinction) |
-
-#### student_vle (Clean)
-| Column | Type | Description |
-|--------|------|-------------|
-| code_module | STRING | Course module code |
-| code_presentation | STRING | Course presentation |
-| id_student | INTEGER | Student identifier |
-| id_site | INTEGER | VLE resource identifier |
-| date | DATE | Interaction date (converted from days) |
-| sum_click | INTEGER | Number of clicks on resource |
-
-#### student_assessments (Clean)
-| Column | Type | Description |
-|--------|------|-------------|
-| id_assessment | INTEGER | Assessment identifier |
-| id_student | INTEGER | Student identifier |
-| date_submitted | DATE | Submission date |
-| is_banked | INTEGER | Banking status (0/1) |
-| score | DOUBLE | Assessment score (0-100) |
-
-### Master View Schema
-
-#### v_student_analytics_master
-Comprehensive view combining all student data with derived metrics:
-
-**Demographics & Enrollment**:
-- Student info fields (gender, region, education, etc.)
-- Registration and unregistration dates
-- Course module and presentation details
-
-**VLE Engagement Metrics**:
-- `unique_resources_accessed`: Count of distinct VLE resources
-- `total_vle_interactions`: Sum of all VLE interactions
-- `total_clicks`: Total clicks across all resources
-- `engagement_span_days`: Days between first and last interaction
-
-**Assessment Performance**:
-- `total_assessments_submitted`: Count of submitted assessments
-- `assessments_passed`: Count of passing scores
-- `average_score`: Mean score across all assessments
-- Score breakdowns by type (TMA, CMA, Exam)
-
-**Derived Analytics**:
-- `pass_rate_percentage`: (Passed assessments / Total submitted) * 100
-- `engagement_level`: Categorized as High/Medium/Low/No Engagement
-
----
-
-## Technical Implementation Details
-
-### Data Pipeline Architecture
-
-```
-Raw CSV Files → Databricks Upload → Raw Tables → Data Cleaning → Clean Tables → Analytical Views → Master Analytics View
-```
-
-### Key SQL Techniques Used
-
-1. **Date Transformation**:
-```sql
-DATE_ADD('2013-02-01', TRY_CAST(date AS INT))
-```
-
-2. **Safe Type Casting**:
-```sql
-TRY_CAST(score AS DOUBLE) AS score
-```
-
-3. **Aggregation with Performance Metrics**:
-```sql
-ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as percentage
-```
-
-4. **Complex Joins with NULL Handling**:
-```sql
-LEFT JOIN eduanalytics.v_vle_engagement_summary ve 
-    ON si.code_module = ve.code_module 
-    AND si.code_presentation = ve.code_presentation 
-    AND si.id_student = ve.id_student
-```
-
-### Performance Optimizations
-
-- **Workspace Organization**: Structured database with clear naming conventions
-- **View-Based Architecture**: Modular approach with reusable analytical views
-- **Efficient Joins**: Strategic use of LEFT JOINs to preserve student records
-- **Aggregation Optimization**: Pre-calculated metrics in views for faster querying
+## Bottom Line
+Strong academic performance among engaged students, but 53% completion failure indicates systemic retention challenges. The data reveals clear intervention opportunities through early warning systems, demographic-responsive support, and quality engagement strategies.
