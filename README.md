@@ -7,7 +7,9 @@
 
 **Results**: 10 strategic queries examining performance, engagement, demographics, and risk factors with dashboard preparation for actionable insights.
 
-## Critical Findings | [Code and Explanation](https://github.com/tammai1610/edu-analytics/blob/main/03-analysis-dashboard.ipynb)
+## Critical Findings
+
+[Queries and Insights - Full Report](https://github.com/tammai1610/edu-analytics/blob/main/03-analysis-dashboard.ipynb)
 
 ### 1. The Completion Crisis
 Only **37.93% of students pass**, while **31.16% withdraw** before failing. Despite average assessment scores of 72.8%, less than half (47.2%) successfully complete programs.
